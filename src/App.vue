@@ -9,8 +9,11 @@
         <div v-if="!gameStarted" class="start-banner">
           <button class="start-btn" @click="startGame">▶️ 开始游戏</button>
         </div>
-        <div v-else class="timer-display">
-          ⏱️ 用时: {{ formattedTime }}
+        <div v-else class="timer-display-container">
+          <div class="timer-display">
+            ⏱️ 用时: {{ formattedTime }}
+          </div>
+          <button class="restart-btn" @click="startGame" title="重新开始游戏">🔄 重新开始</button>
         </div>
       </div>
     </header>
@@ -63,7 +66,8 @@
           <p>{{ modalMessage }}</p>
         </div>
         <div class="modal-footer">
-          <button class="modal-btn" @click="closeModal">确定</button>
+          <button v-if="gameStarted" class="modal-btn" @click="closeModal">继续游戏</button>
+          <button v-else class="modal-btn restart" @click="closeAndRestart">再来一局</button>
         </div>
       </div>
     </div>
@@ -100,6 +104,25 @@ const formattedTime = computed(() => {
   return `${m}:${s}`;
 });
 
+const generatePositions = () => {
+  const cols = 8;
+  const rows = 6;
+  const positions = [];
+  while (positions.length < 5) {
+    const pos = {
+      x: Math.floor(Math.random() * cols),
+      y: Math.floor(Math.random() * rows)
+    };
+    const exists = positions.some(p => p.x === pos.x && p.y === pos.y);
+    if (!exists) {
+      positions.push(pos);
+    }
+  }
+  return positions;
+};
+
+let initialPositions = generatePositions();
+
 const startGame = () => {
   gameStarted.value = true;
   timeElapsed.value = 0;
@@ -111,8 +134,9 @@ const startGame = () => {
     timeElapsed.value++;
   }, 1000);
   
-  scene1.value?.resetGame();
-  scene2.value?.resetGame();
+  const newPositions = generatePositions();
+  scene1.value?.generateNewBoard(newPositions);
+  scene2.value?.generateNewBoard(newPositions);
   controller1.value?.clearInstructions();
   controller2.value?.clearInstructions();
 };
@@ -144,8 +168,19 @@ const closeModal = () => {
   showModal.value = false;
 };
 
-const onScene1Ready = (scene) => { scene1.value = scene; };
-const onScene2Ready = (scene) => { scene2.value = scene; };
+const closeAndRestart = () => {
+  showModal.value = false;
+  startGame();
+};
+
+const onScene1Ready = (scene) => { 
+  scene1.value = scene; 
+  scene.generateNewBoard(initialPositions);
+};
+const onScene2Ready = (scene) => { 
+  scene2.value = scene; 
+  scene.generateNewBoard(initialPositions);
+};
 
 const execute1 = (instructions) => {
   if (!scene1.value || !gameStarted.value) return;
@@ -267,6 +302,12 @@ body {
   box-shadow: 0 0 0 #e65100;
 }
 
+.timer-display-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
 .timer-display {
   display: inline-block;
   background-color: white;
@@ -277,6 +318,24 @@ body {
   border-radius: 24px;
   border: 2px solid #ef5350;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.restart-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #c62828;
+  transition: all 0.1s;
+}
+
+.restart-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #c62828;
 }
 
 .progress-bar {
@@ -370,20 +429,27 @@ body {
 }
 
 .modal-btn {
-  background-color: #4fc08d;
+  background-color: #00796b;
   color: white;
   border: none;
-  padding: 12px 30px;
+  padding: 10px 24px;
   font-size: 1.1rem;
   font-weight: bold;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 0 #3aa876;
+  transition: background-color 0.2s;
 }
 
 .modal-btn:hover {
-  background-color: #42b983;
+  background-color: #004d40;
+}
+
+.modal-btn.restart {
+  background-color: #ff9800;
+}
+
+.modal-btn.restart:hover {
+  background-color: #f57c00;
 }
 
 .modal-btn:active {

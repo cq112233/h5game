@@ -29,7 +29,36 @@ export default class MainScene extends Phaser.Scene {
     // We will use graphics and text for simplicity instead of loading external images for now.
   }
 
+  applyPositions(positions) {
+    this.startPos = positions[0];
+    this.targets[0].x = positions[1].x;
+    this.targets[0].y = positions[1].y;
+    this.targets[1].x = positions[2].x;
+    this.targets[1].y = positions[2].y;
+    this.targets[2].x = positions[3].x;
+    this.targets[2].y = positions[3].y;
+    this.targets[3].x = positions[4].x;
+    this.targets[3].y = positions[4].y;
+  }
+
+  randomizePositions() {
+    const positions = [];
+    while (positions.length < 5) {
+      const pos = {
+        x: Phaser.Math.Between(0, this.cols - 1),
+        y: Phaser.Math.Between(0, this.rows - 1)
+      };
+      const exists = positions.some(p => p.x === pos.x && p.y === pos.y);
+      if (!exists) {
+        positions.push(pos);
+      }
+    }
+    this.applyPositions(positions);
+  }
+
   create() {
+    this.randomizePositions();
+    
     // Draw the grid
     const graphics = this.add.graphics();
     graphics.lineStyle(2, 0x5d9cec, 1);
@@ -52,20 +81,44 @@ export default class MainScene extends Phaser.Scene {
     graphics.strokePath();
 
     // Draw Targets
+    this.targetSprites = [];
     this.targets.forEach(target => {
       const targetReal = this.getRealPosition(target.x, target.y);
-      this.add.text(targetReal.x, targetReal.y, target.icon, { fontSize: '32px' }).setOrigin(0.5);
+      const sprite = this.add.text(targetReal.x, targetReal.y, target.icon, { fontSize: '32px' }).setOrigin(0.5);
+      this.targetSprites.push(sprite);
     });
 
     // Draw Start Marker (faded)
     const startReal = this.getRealPosition(this.startPos.x, this.startPos.y);
-    this.add.text(startReal.x, startReal.y, '🏠', { fontSize: '32px', alpha: 0.3 }).setOrigin(0.5);
+    this.startSprite = this.add.text(startReal.x, startReal.y, '🏠', { fontSize: '32px', alpha: 0.3 }).setOrigin(0.5);
 
     // Draw Player
     this.playerSprite = this.add.text(startReal.x, startReal.y, '👧', { fontSize: '32px' }).setOrigin(0.5);
+    this.playerPos = { ...this.startPos };
     
     // Expose scene to vue component through events or direct method
     this.events.emit('scene-ready');
+  }
+
+  generateNewBoard(positions) {
+    if (positions) {
+      this.applyPositions(positions);
+    } else {
+      this.randomizePositions();
+    }
+    
+    if (this.startSprite) {
+      const startReal = this.getRealPosition(this.startPos.x, this.startPos.y);
+      this.startSprite.setPosition(startReal.x, startReal.y);
+    }
+    if (this.targetSprites && this.targetSprites.length === 4) {
+      for (let i = 0; i < 4; i++) {
+        const targetReal = this.getRealPosition(this.targets[i].x, this.targets[i].y);
+        this.targetSprites[i].setPosition(targetReal.x, targetReal.y);
+      }
+    }
+    
+    this.resetGame();
   }
   
   getRealPosition(gridX, gridY) {
