@@ -3,18 +3,32 @@
     <header class="app-header">
       <h1>鲁老师：幼儿路径规划游戏</h1>
       <p>大班数学逻辑思维版</p>
+      
+      <!-- Timer & Start Area -->
+      <div class="game-info">
+        <div v-if="!gameStarted" class="start-banner">
+          <button class="start-btn" @click="startGame">▶️ 开始游戏</button>
+        </div>
+        <div v-else class="timer-display">
+          ⏱️ 用时: {{ formattedTime }}
+        </div>
+      </div>
     </header>
 
     <main class="game-area">
       <!-- Player 1 / Screen 1 -->
       <div class="screen-wrapper">
         <h2 class="screen-title">玩家 1 (左)</h2>
+        <div class="progress-bar">
+          <span>收集进度 ({{ visited1.length }}/4): </span>
+          <span v-for="t in visited1" :key="t.name" class="visited-icon" :title="t.name">{{ t.icon }}</span>
+        </div>
         <div class="game-board">
           <PhaserGame @ready="onScene1Ready" />
         </div>
         <GameController 
           ref="controller1"
-          :disabled="isAnimating1" 
+          :disabled="isAnimating1 || !gameStarted" 
           @execute="execute1" 
           @reset="reset1" 
         />
@@ -23,12 +37,16 @@
       <!-- Player 2 / Screen 2 (Hidden on mobile by media query or flex wrap) -->
       <div class="screen-wrapper screen-2">
         <h2 class="screen-title">玩家 2 (右)</h2>
+        <div class="progress-bar">
+          <span>收集进度 ({{ visited2.length }}/4): </span>
+          <span v-for="t in visited2" :key="t.name" class="visited-icon" :title="t.name">{{ t.icon }}</span>
+        </div>
         <div class="game-board">
           <PhaserGame @ready="onScene2Ready" />
         </div>
         <GameController 
           ref="controller2"
-          :disabled="isAnimating2" 
+          :disabled="isAnimating2 || !gameStarted" 
           @execute="execute2" 
           @reset="reset2" 
         />
@@ -53,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import PhaserGame from './components/PhaserGame.vue';
 import GameController from './components/GameController.vue';
 
@@ -67,6 +85,61 @@ const isAnimating2 = ref(false);
 const showModal = ref(false);
 const modalMessage = ref('');
 
+// --- Timer & Game State ---
+const gameStarted = ref(false);
+const timeElapsed = ref(0);
+let timerInterval = null;
+
+const visited1 = ref([]);
+const visited2 = ref([]);
+const TOTAL_TARGETS = 4;
+
+const formattedTime = computed(() => {
+  const m = Math.floor(timeElapsed.value / 60).toString().padStart(2, '0');
+  const s = (timeElapsed.value % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+});
+
+const startGame = () => {
+  gameStarted.value = true;
+  timeElapsed.value = 0;
+  visited1.value = [];
+  visited2.value = [];
+  
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeElapsed.value++;
+  }, 1000);
+  
+  scene1.value?.resetGame();
+  scene2.value?.resetGame();
+  controller1.value?.clearInstructions();
+  controller2.value?.clearInstructions();
+};
+
+const stopGame = () => {
+  if (timerInterval) clearInterval(timerInterval);
+  gameStarted.value = false;
+};
+
+const handleTargetReached = (playerNum, reachedTarget) => {
+  const visitedList = playerNum === 1 ? visited1 : visited2;
+  
+  const alreadyVisited = visitedList.value.find(t => t.name === reachedTarget.name);
+  if (!alreadyVisited) {
+    visitedList.value.push(reachedTarget);
+  }
+  
+  if (visitedList.value.length >= TOTAL_TARGETS) {
+    stopGame();
+    modalMessage.value = `👑 玩家 ${playerNum} 率先到达了所有地点！\n总耗时：${formattedTime.value}`;
+    showModal.value = true;
+  } else {
+    modalMessage.value = `玩家 ${playerNum} 成功到达：${reachedTarget.name} ${reachedTarget.icon}！\n当前进度: ${visitedList.value.length}/${TOTAL_TARGETS}`;
+    showModal.value = true;
+  }
+};
+
 const closeModal = () => {
   showModal.value = false;
 };
@@ -75,27 +148,25 @@ const onScene1Ready = (scene) => { scene1.value = scene; };
 const onScene2Ready = (scene) => { scene2.value = scene; };
 
 const execute1 = (instructions) => {
-  if (!scene1.value) return;
+  if (!scene1.value || !gameStarted.value) return;
   isAnimating1.value = true;
   scene1.value.executeInstructions(instructions, (reachedTarget) => {
     isAnimating1.value = false;
+    controller1.value?.clearInstructions();
     if (reachedTarget) {
-      modalMessage.value = `玩家 1 成功到达：${reachedTarget.name} ${reachedTarget.icon}！`;
-      showModal.value = true;
-      controller1.value?.clearInstructions();
+      handleTargetReached(1, reachedTarget);
     }
   });
 };
 
 const execute2 = (instructions) => {
-  if (!scene2.value) return;
+  if (!scene2.value || !gameStarted.value) return;
   isAnimating2.value = true;
   scene2.value.executeInstructions(instructions, (reachedTarget) => {
     isAnimating2.value = false;
+    controller2.value?.clearInstructions();
     if (reachedTarget) {
-      modalMessage.value = `玩家 2 成功到达：${reachedTarget.name} ${reachedTarget.icon}！`;
-      showModal.value = true;
-      controller2.value?.clearInstructions();
+      handleTargetReached(2, reachedTarget);
     }
   });
 };
@@ -174,6 +245,58 @@ body {
   font-size: 1.5rem;
 }
 
+.game-info {
+  margin-top: 15px;
+}
+
+.start-btn {
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #e65100;
+  transition: all 0.1s;
+}
+
+.start-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #e65100;
+}
+
+.timer-display {
+  display: inline-block;
+  background-color: white;
+  color: #d32f2f;
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 8px 24px;
+  border-radius: 24px;
+  border: 2px solid #ef5350;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.progress-bar {
+  display: flex;
+  align-items: center;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  color: #555;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.visited-icon {
+  margin-left: 8px;
+  font-size: 1.2rem;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+}
+
 .game-board {
   width: 100%;
   aspect-ratio: 520 / 400; /* Approx match the 60*8 x 60*6 */
@@ -235,6 +358,7 @@ body {
   font-size: 1.2rem;
   color: #333;
   line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 .modal-footer {
