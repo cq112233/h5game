@@ -87,6 +87,12 @@ const getArrow = (dir) => {
     default: return '';
   }
 };
+
+defineExpose({
+  clearInstructions: () => {
+    instructions.value = [];
+  }
+});
 </script>
 
 <style scoped>

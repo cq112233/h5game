@@ -13,6 +13,7 @@
           <PhaserGame @ready="onScene1Ready" />
         </div>
         <GameController 
+          ref="controller1"
           :disabled="isAnimating1" 
           @execute="execute1" 
           @reset="reset1" 
@@ -26,12 +27,28 @@
           <PhaserGame @ready="onScene2Ready" />
         </div>
         <GameController 
+          ref="controller2"
           :disabled="isAnimating2" 
           @execute="execute2" 
           @reset="reset2" 
         />
       </div>
     </main>
+
+    <!-- Custom Success Modal -->
+    <div class="modal-overlay" v-if="showModal" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>🎉 恭喜！</h3>
+        </div>
+        <div class="modal-body">
+          <p>{{ modalMessage }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn" @click="closeModal">确定</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -42,8 +59,17 @@ import GameController from './components/GameController.vue';
 
 const scene1 = ref(null);
 const scene2 = ref(null);
+const controller1 = ref(null);
+const controller2 = ref(null);
 const isAnimating1 = ref(false);
 const isAnimating2 = ref(false);
+
+const showModal = ref(false);
+const modalMessage = ref('');
+
+const closeModal = () => {
+  showModal.value = false;
+};
 
 const onScene1Ready = (scene) => { scene1.value = scene; };
 const onScene2Ready = (scene) => { scene2.value = scene; };
@@ -54,7 +80,9 @@ const execute1 = (instructions) => {
   scene1.value.executeInstructions(instructions, (reachedTarget) => {
     isAnimating1.value = false;
     if (reachedTarget) {
-      setTimeout(() => alert(`玩家 1 成功到达：${reachedTarget.name} ${reachedTarget.icon}！`), 100);
+      modalMessage.value = `玩家 1 成功到达：${reachedTarget.name} ${reachedTarget.icon}！`;
+      showModal.value = true;
+      controller1.value?.clearInstructions();
     }
   });
 };
@@ -65,7 +93,9 @@ const execute2 = (instructions) => {
   scene2.value.executeInstructions(instructions, (reachedTarget) => {
     isAnimating2.value = false;
     if (reachedTarget) {
-      setTimeout(() => alert(`玩家 2 成功到达：${reachedTarget.name} ${reachedTarget.icon}！`), 100);
+      modalMessage.value = `玩家 2 成功到达：${reachedTarget.name} ${reachedTarget.icon}！`;
+      showModal.value = true;
+      controller2.value?.clearInstructions();
     }
   });
 };
@@ -153,6 +183,103 @@ body {
 @media (max-width: 900px) {
   .screen-2 {
     display: none; /* Hide second screen on smaller devices */
+  }
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background: white;
+  padding: 0;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  transform: translateY(0);
+  animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+}
+
+.modal-header {
+  background-color: #4fc08d;
+  padding: 20px;
+  text-align: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 1.5rem;
+}
+
+.modal-body {
+  padding: 30px 20px;
+  text-align: center;
+}
+
+.modal-body p {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+  line-height: 1.5;
+}
+
+.modal-footer {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  background-color: #f9f9f9;
+  border-top: 1px solid #eee;
+}
+
+.modal-btn {
+  background-color: #4fc08d;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 0 #3aa876;
+}
+
+.modal-btn:hover {
+  background-color: #42b983;
+}
+
+.modal-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #3aa876;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

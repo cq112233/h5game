@@ -1,38 +1,52 @@
-# untitled
+# 幼儿路径规划游戏 🎮 (大班数学逻辑思维版)
 
-This template should help get you started developing with Vue 3 in Vite.
+这是一款专为幼儿园大班设计的数学与逻辑思维互动游戏。通过方向指令的排列组合，帮助孩子们锻炼空间认知、逻辑推理和序列规划能力。
 
-## Recommended IDE Setup
+## 🌟 游戏特色
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- **双人互动模式**：支持屏幕分屏显示，两位玩家可以分别在大屏的两侧同时进行游戏（在较小屏幕上自动适配为单人模式）。
+- **指令式寻路**：玩家需要通过控制器输入“上、下、左、右”序列指令（类似于少儿编程启蒙），规划出从起点到目标扬州地标（如：瘦西湖、大明寺、文昌阁、东关街）的路径。
+- **生动的动画反馈**：基于 Phaser 游戏引擎开发，按下“确定”后主角会依照指令序列一步步移动。到达终点后，系统会展示带有流畅动画效果的精美专属弹窗提示。
+- **支持试错与重置**：具备“擦除”最后一步指令，以及“重置”整个指令序列与场景的友好操作设计。
 
-## Recommended Browser Setup
+## 🛠️ 技术栈
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- [Vue 3](https://vuejs.org/) 
+- [Vite](https://vitejs.dev/) - 极速的现代前端构建工具
+- [Phaser 3](https://phaser.io/) - 强大的 HTML5 2D 游戏引擎
 
-## Customize configuration
+## 🚀 本地开发指南
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+建议您在电脑上安装 [Node.js](https://nodejs.org/) 以及 [pnpm](https://pnpm.io/) 来进行包管理。
 
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
+### 1. 安装依赖包
 
 ```sh
-npm run dev
+pnpm install
 ```
 
-### Compile and Minify for Production
+### 2. 启动本地开发服务器
 
 ```sh
-npm run build
+pnpm run dev
 ```
+启动后可在浏览器中预览游戏。代码具备热更新 (Hot-Reload) 能力，修改保存后页面会实时更新。
+
+### 3. 生产环境代码打包
+
+```sh
+pnpm run build
+```
+执行完毕后，所有编译并压缩后的静态页面资源会存放于项目根目录的 `dist` 文件夹下。
+
+## 🌍 GitHub Pages 自动化部署
+
+本项目已经配置好了 GitHub Actions 工作流。每当您有新的代码推送到仓库的 `main` 分支时，系统都会自动打包并部署到 GitHub Pages。
+
+**部署前置配置（仅需一次）：**
+1. 进入 GitHub 仓库主页。
+2. 点击上方的 **Settings** 选项卡。
+3. 左侧菜单栏找到并进入 **Pages** 设置。
+4. 将 **Build and deployment** 下的 **Source** 从默认的分支切换为 **`GitHub Actions`**。
+
+配置完成后，所有推送都将自动为您更新线上网站内容。
